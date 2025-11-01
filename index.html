@@ -4,14 +4,73 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mon Album Souvenirs Interactif</title>
-  <link rel="stylesheet" href="./css/style.css">
   <!-- Chargement de Tailwind CSS pour un style moderne et réactif -->
   <script src="https://cdn.tailwindcss.com"></script>
-  
+  <style>
+    /* Styles pour le mode lecture / taille du livre */
+    .flip-book-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      /* Hauteur par défaut pour centrer le livre avant l'initialisation */
+      min-height: 50vh; 
+      width: 100%;
+    }
+    
+    /* Cache l'album avant que Turn.js ne calcule sa taille finale */
+    #monAlbum {
+      visibility: hidden;
+    }
+
+    /* Style de base des pages */
+    .page {
+      background-color: #fff;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      border: 1px solid #ccc;
+      padding: 1rem;
+      overflow: hidden; /* Empêche le contenu de déborder pendant le flip */
+    }
+
+    /* Styles pour le contenu à l'intérieur des pages */
+    .content-page-wrapper {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      justify-content: center;
+      align-items: center;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    /* Styles spécifiques pour les vidéos */
+    .video-page-content {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        width: 100%;
+    }
+
+    .video-page-content video {
+        max-height: 85%;
+        width: 100%;
+        object-fit: contain;
+    }
+    
+    /* Styles pour la couverture */
+    .cover-page {
+        background-color: #f7f7f7;
+        border: none;
+        box-shadow: none;
+        /* Ajout d'une ombre douce pour l'effet de livre */
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    }
+  </style>
 </head>
 <body class="bg-gray-100 font-sans p-4">
 
-  <div class="max-w-6xl mx-auto py-8">
+  <div class="max-w-7xl mx-auto py-8">
     <h1 class="text-4xl font-extrabold text-center text-green-700 mb-4">
       Mon Album Souvenirs
     </h1>
@@ -25,10 +84,10 @@
    
     <!-- Boutons de navigation (Centrés et stylisés) -->
     <div class="navigation-buttons flex justify-center space-x-4 mt-8">
-      <button id="prevBtn" class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-full shadow-md transition duration-200 disabled:opacity-50">
+      <button id="prevBtn" class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-full shadow-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
         ← Précédent
       </button>
-      <button id="nextBtn" class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-full shadow-md transition duration-200 disabled:opacity-50">
+      <button id="nextBtn" class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-full shadow-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
         Suivant →
       </button>
     </div>
@@ -45,7 +104,7 @@
   <script>
     // --- Simulation des données (remplace album.json) ---
     const albumData = [
-      { type: 'cover', title: 'Six mois en Calédonie', subtitle: '______', media: null }, // Page 1 (Couverture)
+      { type: 'cover', title: 'Six mois en Calédonie', subtitle: 'Un voyage inoubliable', media: null }, // Page 1 (Couverture)
       
        // Page 2 (Texte Centré)
       { 
@@ -58,12 +117,12 @@
         `
       }, 
       
-      // --- VOTRE PAGE RÉTABLIE (Page 3) ---
+      // Page 3 (Texte)
       { 
         type: 'content', 
         layout: 'text-only', 
         text: `
-          <p class="mb-4 text-2xl font-bold text-gray-800">Un voyage en Nouvelle Calédonie, ça demande de la patience, ça prend approximativement de 25h à 7 jours.</p>
+          <p class="mb-4 text-2xl font-bold text-gray-800">Un voyage en Nouvelle Calédonie, ça demande de la patience, ça prend approximativement de 25h à 7 jours.😂😂😂</p>
         `
       }, 
 
@@ -73,10 +132,11 @@
           layout: 'portrait-pair', 
           media: [ 
               { url: 'images/sac.webp', caption: 'Le départ' },
-              { url: 'images/sac1.webp', caption: 'pareil' }
+              { url: 'images/sac1.webp', caption: 'Pareil!' }
           ] 
       }, 
-            // Page 3 (Vidéo)
+      
+      // Page 5 (Vidéo - UTILISE LA BALISE <video> FIXÉE)
       {
         type: 'content',
         layout: 'video',
@@ -84,15 +144,17 @@
           { url: 'videos/VID_20250516_072230.mp4', caption: 'Une arrivée magique' } 
         ],
       }, 
-             // Page 4 (Vidéo)
+      
+      // Page 6 (Vidéo - UTILISE LA BALISE <video> FIXÉE)
       {
         type: 'content',
         layout: 'video',
         media: [
-          { url: 'videos/VID_20250516_072340.mp4', caption: 'Une arrivée magique' } 
+          { url: 'videos/VID_20250516_072340.mp4', caption: 'Le survol des îlots' } 
         ],
       }, 
-        // --- VOTRE PAGE RÉTABLIE (Page 5) ---
+      
+      // Page 7 (Texte)
       { 
         type: 'content', 
         layout: 'text-only', 
@@ -101,25 +163,53 @@
         `
       }, 
       
-      // Page 6 (Une seule image Portrait)
-      { type: 'content', layout: 'portrait', media: [ { url: 'images/bananes.webp', caption: 'Le petit paradis' } ] }, 
+      // Page 8 (Une seule image Portrait)
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/bananes.webp', caption: 'Le petit paradis, vue du jardin.' } ] }, 
 
-      // Page 6 (2 Paysages Empilés)
-      // { type: 'content', layout: 'landscape-pair', media: [ { url: 'https://placehold.co/450x250/059669/ffffff?text=Image+Paysage+Haut', caption: 'Le village depuis la colline' }, { url: 'https://placehold.co/450x250/10b981/ffffff?text=Photo+6', caption: 'Le plat local' } ] }, 
-            
-      // Page 6 (UNE SEULE IMAGE PAYSAGE LARGE)
+      // Page 9 (UNE SEULE IMAGE PAYSAGE LARGE)
       { 
           type: 'content', 
           layout: 'landscape-only', 
           media: [ 
-              { url: 'images/jardin.webp', caption: 'Petit levé de soleil .' }
+              { url: 'images/jardin.webp', caption: 'Petit lever de soleil sur le jardin.' }
           ] 
       }, 
 
-      // Page 9 (Portrait)
-      { type: 'content', layout: 'portrait', media: [ { url: 'images/paysage_koe.webp', caption: 'Sur la route de Koé.' } ] }, 
+      // Page 10 (Portrait)
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/koe.webp', caption: 'Sur la route de Koé.' } ] },
+        
+      // --- DÉBUT DES PAGES DE NOUMÉA (Chemains Corrigés) ---
+      { 
+        type: 'content', 
+        layout: 'text-only', 
+        text: `
+          <p class="mb-4 text-3xl font-extrabold text-green-700">Nouméa, la capitale</p>
+        `
+      }, 
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/noumea.webp', caption: 'L\'Anse Vata' } ] },
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/noumea1.webp', caption: 'La baie des Citrons' } ] },
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/noumea3.webp', caption: 'Vue panoramique' } ] },
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/noumea5.webp', caption: 'Promenade matinale' } ] },
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/noumea7.webp', caption: 'Détente au bord de l\'eau' } ] },
+      // { type: 'content', layout: 'portrait', media: [ { url: 'images/noumea9.webp', caption: 'Port de plaisance' } ] },
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/noumea11.webp', caption: 'Coucher de soleil' } ] },
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/noumea13.webp', caption: 'Architecture locale' } ] },
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/noumea2.webp', caption: 'Ciel bleu' } ] },
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/noumea4.webp', caption: 'Plage du Kuendu' } ] },
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/noume6.webp', caption: 'Les cocotiers' } ] },
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/noumea8.webp', caption: 'Détail d\'une rue' } ] },
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/numea10.webp', caption: 'Les îles au loin' } ] },
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/noumea12.webp', caption: 'Jardin botanique' } ] },
       
-      { type: 'cover', title: 'Bye la Province Sud', subtitle: 'To be continued', media: null } // Page 10 (Couverture)
+      // Page Chasse aux baleines
+      { 
+        type: 'content', 
+        layout: 'text-only', 
+        text: `
+          <p class="mb-4 text-2xl font-bold text-gray-800">LA chasse aux baleines ...en cours😂😂😂</p>
+        `
+      }, 
+      { type: 'cover', title: 'Bye la Province Sud', subtitle: 'To be continued...', media: null } // Dernière Page (Couverture)
     ];
 
     const $album = $('#monAlbum');
@@ -127,7 +217,7 @@
     const $nextBtn = $('#nextBtn');
     
     // Constantes pour les dimensions de base
-    const PAGE_ASPECT_RATIO = 4/3; // Hauteur / Largeur (ex: 600px / 450px)
+    const PAGE_ASPECT_RATIO = 4/3; // Hauteur / Largeur (Hauteur > Largeur pour un livre)
     let isTurnInitialized = false; 
     
     // Fonction utilitaire pour créer le contenu de chaque page
@@ -137,8 +227,8 @@
       
       // Code pour afficher une image de substitution en cas d'erreur de chargement
       const fallbackImageAction = (isLandscape) => {
-        // Le fallback utilise des placeholders
-        const placeholder = isLandscape ? 'https://placehold.co/450x250/10b981/ffffff?text=ERREUR' : 'https://placehold.co/450x550/10b981/ffffff?text=ERREUR';
+        const dimensions = isLandscape ? '450x250' : '450x550';
+        const placeholder = `https://placehold.co/${dimensions}/b91c1c/ffffff?text=ERREUR+IMAGE`;
         return `console.error('Erreur de chargement de l\\'image:', this.src); this.onerror=null; this.src='${placeholder}'; this.style.opacity='0.9';`;
       };
 
@@ -146,16 +236,15 @@
       // La première et la dernière page sont des couvertures
       if (isCover) {
         contentHTML = `
-          <div class="cover-page flex flex-col justify-center items-center w-full h-full p-4">
-            <h2 class="w-full text-3xl md:text-5xl font-bold text-center">${data.title}</h2>
-            <p class="w-full text-lg md:text-xl mt-4 opacity-80 text-center">${data.subtitle}</p>
+          <div class="cover-page flex flex-col justify-center items-center w-full h-full p-8 text-white bg-green-800 rounded-lg">
+            <h2 class="w-full text-4xl md:text-6xl font-extrabold text-center">${data.title}</h2>
+            <p class="w-full text-xl md:text-2xl mt-6 font-light text-center">${data.subtitle}</p>
           </div>
         `;
       } else {
         // Pages de contenu
         
         if (data.layout === 'portrait') {
-            // Mise en page 1: Une seule image (Portrait)
             const media = data.media[0];
             contentHTML = `
               <div class="content-page-wrapper flex-col justify-between items-center space-y-4">
@@ -168,7 +257,6 @@
             `;
 
         } else if (data.layout === 'portrait-pair') {
-            // Deux images Portrait côte à côte
             contentHTML = `
               <div class="content-page-wrapper flex flex-row justify-around items-center space-x-4 p-2 h-full">
                 ${data.media.map((media, i) => `
@@ -184,7 +272,6 @@
             `;
             
         } else if (data.layout === 'landscape-only') {
-            // Une seule image Paysage large
             const media = data.media[0];
             contentHTML = `
               <div class="content-page-wrapper flex-col justify-between items-center space-y-4">
@@ -197,8 +284,6 @@
             `;
             
         } else if (data.layout === 'landscape-pair') {
-            // Deux images Paysage empilées verticalement
-            
             let imageContainerHTML = `<div class="flex flex-col w-full h-[95%] space-y-4">`; 
             
             data.media.forEach(media => {
@@ -217,19 +302,21 @@
             contentHTML = `<div class="content-page-wrapper">${imageContainerHTML}</div>`;
 
         } else if (data.layout === 'video') {
-             // Une vidéo intégrée
+             // FIX CRITIQUE: Utilisation de la balise <video> pour les fichiers MP4 locaux
             const media = data.media[0];
+            
+            // Poster affiche un placeholder pendant le chargement
+            const posterUrl = `https://placehold.co/450x550/10b981/ffffff?text=Video+Loading...`;
             
             contentHTML = `
               <div class="video-page-content">
-                <div class="video-wrapper">
-                    <iframe src="${media.url}" 
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowfullscreen
-                            class="border-none rounded-lg shadow-xl"
-                    ></iframe>
-                </div>
-                ${media.caption ? `<p class="text-base font-semibold text-gray-700 flex-none text-center max-w-sm">${media.caption}</p>` : ''}
+                <video controls preload="metadata" 
+                       poster="${posterUrl}"
+                       class="w-full h-4/5 object-contain rounded-lg shadow-xl bg-black">
+                    <source src="${media.url}" type="video/mp4">
+                    Votre navigateur ne supporte pas la balise vidéo.
+                </video>
+                ${media.caption ? `<p class="text-base font-semibold text-gray-700 flex-none text-center mt-4 max-w-sm">${media.caption}</p>` : ''}
               </div>
             `;
         } else if (data.layout === 'text-only') {
@@ -258,10 +345,11 @@
         // Récupérer les dimensions disponibles du conteneur parent
         const container = $('.flip-book-container')[0];
         const maxContainerWidth = container.clientWidth;
-        const maxContainerHeight = container.clientHeight;
+        const maxContainerHeight = window.innerHeight * 0.8; // Limite la hauteur à 80% de la fenêtre
         
         // Déterminer le mode d'affichage:
-        const isSinglePageMode = maxContainerWidth < maxContainerHeight * 1.25; 
+        // Le mode simple est activé si la largeur disponible est trop petite pour afficher deux pages.
+        const isSinglePageMode = maxContainerWidth < maxContainerHeight * PAGE_ASPECT_RATIO * 1.5; 
         
         let finalWidth, finalHeight;
         
@@ -271,38 +359,27 @@
             finalHeight = Math.min(maxContainerHeight * 0.95, 600); 
             finalWidth = finalHeight / PAGE_ASPECT_RATIO;
             
+            // Ajustement si la largeur calculée est toujours trop grande
             if (finalWidth > maxContainerWidth * 0.95) {
                 finalWidth = maxContainerWidth * 0.95;
                 finalHeight = finalWidth * PAGE_ASPECT_RATIO;
             }
             
-            finalWidth = Math.round(finalWidth);
-            finalHeight = Math.round(finalHeight);
-
-            // Mise à jour de Turn.js
-            if (isTurnInitialized) {
-                $album.turn('size', finalWidth, finalHeight);
-            }
-
         } else {
             // Mode double page
             
             finalHeight = Math.min(maxContainerHeight * 0.95, 600); 
             finalWidth = finalHeight * PAGE_ASPECT_RATIO * 2;
             
+            // Ajustement si la largeur calculée est trop grande
             if (finalWidth > maxContainerWidth * 0.95) {
                 finalWidth = maxContainerWidth * 0.95;
                 finalHeight = finalWidth / (PAGE_ASPECT_RATIO * 2);
             }
-
-            finalWidth = Math.round(finalWidth);
-            finalHeight = Math.round(finalHeight);
-
-            // Mise à jour de Turn.js
-            if (isTurnInitialized) {
-                $album.turn('size', finalWidth, finalHeight);
-            }
         }
+
+        finalWidth = Math.round(finalWidth);
+        finalHeight = Math.round(finalHeight);
 
         // Si Turn.js n'est pas initialisé, nous devons le faire maintenant
         if (!isTurnInitialized) {
@@ -320,7 +397,8 @@
                 display: isSinglePageMode ? 'single' : 'double',  
                 elevation: 50,      
                 gradients: true,    
-                duration: 800       
+                // MODIFICATION ICI : Augmentation de la durée de 800 à 20000ms pour effet visuel du livre
+                duration: 2000     
             });
             
             isTurnInitialized = true;
@@ -343,7 +421,9 @@
             updateNavigation($album.turn('page'));
 
         } else {
-            // Si déjà initialisé, juste recentrer
+            // Si déjà initialisé, ajuster la taille et recentrer
+            $album.turn('size', finalWidth, finalHeight);
+            $album.turn('display', isSinglePageMode ? 'single' : 'double');
             $album.turn('center');
             updateNavigation($album.turn('page'));
         }
