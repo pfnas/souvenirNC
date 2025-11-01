@@ -18,38 +18,63 @@
             width: 100%;
         }
         #monAlbum { visibility: hidden; }
+        
+        /* Conteneur de Page principal */
         .page {
             background-color: #fff;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             border: 1px solid #ccc;
             padding: 1rem;
             overflow: hidden;
+            box-sizing: border-box; /* IMPORTANT pour le calcul de la hauteur */
         }
+        
+        /* Conteneur de Contenu - Doit remplir la page entière */
         .content-page-wrapper {
             display: flex;
             flex-direction: column;
             height: 100%;
+            width: 100%;
+            justify-content: space-between; /* Pour pousser la légende en bas */
+            align-items: center;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        /* Conteneur spécifique pour les médias et les placeholders */
+        .media-area {
+            flex-grow: 1; /* Prend l'espace maximal disponible */
+            width: 100%;
+            display: flex;
             justify-content: center;
             align-items: center;
-            padding: 1rem;
-            text-align: center;
+            overflow: hidden; /* Prévient le débordement */
+            padding-bottom: 0.5rem; /* Espace avant la légende */
         }
+        
         .cover-page {
             background-color: #f7f7f7;
             border: none;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
         }
+        
         /* Style spécifique pour le placeholder de fichier manquant */
         .local-file-placeholder {
             @apply flex justify-center items-center w-full h-full text-white font-bold text-center p-4 rounded-lg flex-col;
             background-color: #ef4444; /* Rouge Tailwind 500 */
             border: 2px dashed #b91c1c; /* Rouge Tailwind 700 */
+            max-height: 100%;
+            overflow: hidden;
         }
+        
+        /* Style des images */
         .media-image {
-            object-fit: cover;
-            width: 100%;
-            height: 100%;
-            max-height: 80%; /* Pour laisser de la place à la légende */
+            /* Changé de cover à contain pour que l'image ne soit jamais coupée */
+            object-fit: contain; 
+            width: auto; 
+            max-width: 100%;
+            max-height: 100%; /* Contrainte de hauteur stricte */
+            height: auto; 
             border-radius: 8px;
         }
     </style>
@@ -72,7 +97,13 @@
         <!-- Alerte pour les fichiers locaux non chargés -->
         <div class="max-w-xl mx-auto p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg text-center mb-6">
             <p class="font-bold">⚠️ ATTENTION AUX CHEMINS LOCAUX</p>
-            <p class="text-sm">Si vous voyez des cadres rouges, ouvrez `index.html` via un **serveur local** (ex: Live Server ou `python3 -m http.server`) car le protocole `file://` bloque l'accès aux fichiers.</p>
+            <p class="text-sm">Si vous voyez des cadres rouges, vous devez utiliser une **URL Publique** (via Firebase Hosting par exemple) pour un affichage sur mobile.</p>
+        </div>
+
+        <!-- Status de Connexion et Débogage -->
+        <div id="statusArea" class="max-w-xl mx-auto p-4 bg-blue-100 border border-blue-400 text-blue-700 rounded-lg text-center mb-6">
+            <p id="authStatus" class="font-bold">Authentification Firebase : En cours...</p>
+            <p id="dbStatus" class="text-sm">Connexion Firestore : En cours...</p>
         </div>
 
         <div class="flip-book-container">
@@ -155,6 +186,11 @@
                 <li class="text-center text-gray-500">Chargement des pages...</li>
             </ul>
         </div>
+        
+        <!-- Affichage de l'ID Utilisateur (Débogage) -->
+        <div class="mt-6 text-center text-sm text-gray-500">
+            ID Utilisateur (pour Firestore): <span id="currentUserId" class="font-mono text-gray-700 break-all">Chargement...</span>
+        </div>
     </div>
 
     <!-- Script de l'Application -->
@@ -173,6 +209,17 @@
         let currentAlbumData = [];
         let isTurnInitialized = false; 
         const PAGE_ASPECT_RATIO = 4/3; 
+        
+        // Fonction utilitaire pour mettre à jour le panneau de statut
+        function updateStatus(authMsg, dbMsg) {
+            if (authMsg) {
+                document.getElementById('authStatus').textContent = authMsg;
+            }
+            if (dbMsg) {
+                document.getElementById('dbStatus').textContent = dbMsg;
+            }
+        }
+
 
         // --- 1. INITIALISATION FIREBASE & AUTHENTIFICATION ---
 
@@ -188,12 +235,16 @@
                     await signInAnonymously(auth);
                 }
                 userId = auth.currentUser?.uid || crypto.randomUUID();
+                document.getElementById('currentUserId').textContent = userId;
+                
+                updateStatus(`Authentification Firebase : Réussie (User: ${userId.substring(0, 8)}...)`, null);
                 console.log("Firebase initialisé. User ID:", userId);
                 
                 // Démarrer l'écoute des données après l'authentification
                 listenForAlbumData();
 
             } catch (error) {
+                updateStatus("Authentification Firebase : ÉCHEC", `Erreur: ${error.code} ou Réseau coupé.`);
                 console.error("Erreur d'initialisation Firebase:", error);
             }
         }
@@ -214,17 +265,25 @@
             { type: 'content', layout: 'cover', title: 'Bye la Province Sud', subtitle: 'To be continued...', media: [], text: null, index: 10 }
         ];
         
-        // Liste d'URLs publiques pour le test dans l'éditeur (maintenue)
+        // URLs publiques qui seront toujours proposées en autocomplétion
         const PUBLIC_PLACEHOLDER_URLS = [
             'https://placehold.co/400x550/008080/ffffff?text=PAYSAGE+WEB',
             'https://placehold.co/300x450/4CAF50/ffffff?text=PORTRAIT+WEB+1',
             'https://placehold.co/300x450/2196F3/ffffff?text=PORTRAIT+WEB+2',
             'https://placehold.co/600x400/FF5722/ffffff?text=COUVERTURE+WEB',
+            // Ajout des chemins locaux par défaut pour l'autocomplétion
+            'images/sac.webp',
+            'images/sac1.webp',
+            'videos/VID_20250516_072230.mp4',
+            'images/bananes.webp',
+            'images/jardin.webp',
+            'images/noumea.webp',
         ];
 
-        // Fonction pour mettre à jour la liste d'autocomplétion
+        // Fonction pour mettre à jour la liste d'autocomplétion 
         function updateDatalist(pages) {
             const mediaPaths = new Set(PUBLIC_PLACEHOLDER_URLS);
+            
             pages.forEach(page => {
                 if (page.media && Array.isArray(page.media)) {
                     page.media.forEach(media => {
@@ -236,6 +295,12 @@
             });
 
             const datalist = document.getElementById('mediaPaths');
+            
+            if (!datalist) {
+                console.error("Erreur: L'élément datalist (#mediaPaths) n'a pas été trouvé.");
+                return;
+            }
+
             datalist.innerHTML = ''; 
             
             mediaPaths.forEach(path => {
@@ -255,10 +320,11 @@
             const snapshot = await getDocs(albumCollection);
             if (snapshot.empty) {
                 console.log("Collection vide, peuplement initial...");
-                for (let i = 0; i < INITIAL_ALBUM_DATA.length; i++) {
-                    const data = INITIAL_ALBUM_DATA[i];
-                    await addDoc(albumCollection, { ...data, index: i + 1, createdAt: new Date().toISOString() });
-                }
+                // Utilisation de Promise.all pour un ajout plus rapide
+                const batch = INITIAL_ALBUM_DATA.map((data, i) => 
+                    addDoc(albumCollection, { ...data, index: i + 1, createdAt: new Date().toISOString() })
+                );
+                await Promise.all(batch);
             }
 
             onSnapshot(q, (snapshot) => {
@@ -267,12 +333,16 @@
                     pages.push({ id: doc.id, ...doc.data() });
                 });
                 
+                // Assurer que les indexes sont séquentiels et à jour pour le déplacement
                 currentAlbumData = pages.map((p, i) => ({ ...p, index: i + 1 }));
 
                 renderAdminList(currentAlbumData);
                 renderAlbum(currentAlbumData);
                 updateDatalist(currentAlbumData); 
+                updateStatus(null, `Connexion Firestore : Active (${currentAlbumData.length} pages chargées)`);
+
             }, (error) => {
+                updateStatus(null, `Connexion Firestore : ÉCHEC (Vérifiez les règles de sécurité)`);
                 console.error("Erreur onSnapshot:", error);
             });
         }
@@ -294,6 +364,7 @@
                     await addDoc(albumCollection, dataToSave);
                     console.log("Nouvelle page ajoutée avec succès.");
                 }
+
             } catch (e) {
                 console.error("Erreur lors de la sauvegarde de la page:", e);
             }
@@ -301,11 +372,15 @@
 
         // Supprimer une page
         async function deletePage(id) {
-            if (!id || !confirm('Êtes-vous sûr de vouloir supprimer cette page ?')) return;
+            // Remplacer confirm() par une alerte/confirmation customisée (meilleure pratique)
+            if (!id) return;
+            if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette page ? (Utiliser un modal customisé est recommandé)')) return;
+
 
             try {
                 await deleteDoc(doc(db, ALBUM_COLLECTION_PATH, id));
                 console.log("Page supprimée avec succès:", id);
+                
             } catch (e) {
                 console.error("Erreur lors de la suppression:", e);
             }
@@ -353,49 +428,45 @@
                     </div>
                 `;
             } else {
-                let mediaContent = '';
-                const media = data.media && data.media[0] ? data.media[0] : { url: '', caption: 'Aucun média' };
                 
                 if (data.layout === 'portrait' || data.layout === 'landscape-only' || data.layout === 'video-simulated') {
-                    
-                    if (media.url) {
-                         mediaContent = renderMedia(media.url, media.caption);
-                    } else {
-                        mediaContent = renderMedia('Image/Vidéo attendue', '');
-                    }
-                    
+                    const media = data.media && data.media[0] ? data.media[0] : { url: '', caption: 'Aucun média' };
+                    const mediaContent = media.url ? renderMedia(media.url, media.caption) : renderMedia('Image/Vidéo attendue', '');
+
                     contentHTML = `
-                        <div class="content-page-wrapper flex-col justify-between items-center space-y-4">
-                            <div class="w-full h-full flex-grow flex justify-center items-center">
+                        <div class="content-page-wrapper">
+                            <div class="media-area">
                                 ${mediaContent}
                             </div>
-                            ${media.caption ? `<p class="text-sm text-gray-600 flex-none">${media.caption}</p>` : ''}
-                            <p class="text-xs text-gray-400">Page ${pageNumber}</p>
+                            <p class="text-sm text-gray-600 flex-none">${media.caption || ''}</p>
+                            <p class="text-xs text-gray-400 flex-none">Page ${pageNumber}</p>
                         </div>
                     `;
 
                 } else if (data.layout === 'portrait-pair') {
                     contentHTML = `
-                        <div class="content-page-wrapper flex flex-row justify-around items-center space-x-4 p-2 h-full">
-                            ${data.media.map((media, i) => `
-                                <div class="flex flex-col w-1/2 h-full items-center justify-between p-1">
-                                    <div class="w-full h-full flex-grow flex justify-center items-center">
-                                        ${renderMedia(media.url || '', media.caption)}
+                        <div class="content-page-wrapper p-2">
+                            <div class="flex w-full h-full justify-around items-center space-x-4 media-area">
+                                ${data.media.map((media, i) => `
+                                    <div class="flex flex-col w-1/2 h-full items-center justify-start p-1">
+                                        <div class="w-full h-full flex-grow flex justify-center items-center overflow-hidden">
+                                            ${renderMedia(media.url || '', media.caption)}
+                                        </div>
                                     </div>
-                                    ${media.caption ? `<p class="text-xs text-gray-600 mt-2 flex-none text-center">${media.caption}</p>` : ''}
-                                </div>
-                            `).join('')}
+                                `).join('')}
+                            </div>
+                             <p class="text-xs text-gray-600 mt-2 flex-none text-center w-full">${data.media[0]?.caption || ''}</p>
+                            <p class="text-xs text-gray-400 flex-none">Page ${pageNumber}</p>
                         </div>
-                        <p class="absolute bottom-4 right-4 text-xs text-gray-400">Page ${pageNumber}</p>
                     `;
                     
                 } else if (data.layout === 'text-only') {
                     contentHTML = `
-                        <div class="flex flex-col justify-center items-center h-full p-8 text-center bg-gray-50/70 rounded-lg">
-                            <div class="max-w-md mx-auto text-xl md:text-2xl font-serif text-gray-800 leading-relaxed">
+                        <div class="content-page-wrapper justify-center bg-gray-50/70 rounded-lg p-8">
+                            <div class="max-w-md mx-auto text-xl md:text-2xl font-serif text-gray-800 leading-relaxed text-center flex-grow flex flex-col justify-center">
                                 ${data.text}
                             </div>
-                            <p class="absolute bottom-4 right-4 text-xs text-gray-400">Page ${pageNumber}</p>
+                            <p class="text-xs text-gray-400 flex-none">Page ${pageNumber}</p>
                         </div>
                     `;
                 }
@@ -536,7 +607,13 @@
             const mediaUrl = page.media && page.media[0] ? page.media[0].url : '';
             const caption = page.media && page.media[0] ? page.media[0].caption : (page.subtitle || page.title || '');
 
-            $('#pageMediaUrl').val(mediaUrl);
+            // Si c'est un layout portrait-pair, on vérifie s'il y a une deuxième URL à ajouter pour l'édition
+            if (page.layout === 'portrait-pair' && page.media && page.media.length > 1) {
+                 $('#pageMediaUrl').val(page.media.map(m => m.url).join(', '));
+            } else {
+                 $('#pageMediaUrl').val(mediaUrl);
+            }
+           
             $('#pageCaption').val(caption);
             $('#pageText').val(page.text || '');
 
@@ -566,6 +643,7 @@
             if (!targetPage || !currentPage) return;
 
             try {
+                // Échange des index pour un déplacement simple
                 await updateDoc(doc(db, ALBUM_COLLECTION_PATH, currentPage.id), { index: newIdx });
                 await updateDoc(doc(db, ALBUM_COLLECTION_PATH, targetPage.id), { index: currentIdx });
                 console.log(`Page ${currentPage.id} déplacée de ${currentIdx} à ${newIdx}.`);
@@ -587,7 +665,10 @@
                 admin.addClass('hidden');
                 viewer.removeClass('hidden');
                 btn.removeClass('bg-pink-600').addClass('bg-indigo-600').text('Passer en mode Admin');
-                resizeAlbum(currentAlbumData.length); 
+                // Redimensionner l'album lorsqu'on revient au mode Lecture
+                if (isTurnInitialized) { 
+                    resizeAlbum(currentAlbumData.length); 
+                }
             }
         }
 
@@ -599,7 +680,7 @@
             const id = $('#pageId').val();
             const currentIdx = parseInt($('#pageIndex').val());
             const layout = $('#pageLayout').val();
-            const mediaUrl = $('#pageMediaUrl').val().trim();
+            const mediaUrlInput = $('#pageMediaUrl').val().trim();
             const caption = $('#pageCaption').val().trim();
             const text = $('#pageText').val().trim();
 
@@ -609,7 +690,7 @@
                 data = {
                     type: 'cover',
                     layout: 'cover',
-                    title: caption,
+                    title: caption, // Le titre de la couverture est dans la légende
                     subtitle: text || 'Sous-titre',
                     media: [],
                     text: null
@@ -626,13 +707,26 @@
             } else {
                 const mediaItems = [];
                 
-                if (layout === 'portrait-pair' && mediaUrl.includes(',')) {
-                    mediaUrl.split(',').forEach(url => mediaItems.push({ url: url.trim(), caption: caption }));
-                } else if (mediaUrl) {
-                    mediaItems.push({ url: mediaUrl, caption: caption });
-                    if (layout === 'portrait-pair') {
-                        mediaItems.push({ url: mediaUrl, caption: caption });
+                // Gestion des paires d'images (séparées par des virgules)
+                if (layout === 'portrait-pair') {
+                    const urls = mediaUrlInput.split(',').map(url => url.trim()).filter(url => url !== '');
+                    if (urls.length > 0) {
+                        // Utilise l'URL 1 et l'URL 2 si elles existent
+                        mediaItems.push({ url: urls[0], caption: caption });
+                        if (urls.length > 1) {
+                            mediaItems.push({ url: urls[1], caption: caption });
+                        } else {
+                            // Si une seule URL est fournie, on la duplique (ou on peut mettre un placeholder)
+                            mediaItems.push({ url: urls[0], caption: caption }); 
+                        }
+                    } else {
+                        // Pas d'URL fournie, ajouter un placeholder vide
+                        mediaItems.push({ url: '', caption: caption });
+                        mediaItems.push({ url: '', caption: caption });
                     }
+                } else if (mediaUrlInput) {
+                    // Pour les autres layouts (portrait, landscape, video)
+                    mediaItems.push({ url: mediaUrlInput, caption: caption });
                 }
 
                 data = {
