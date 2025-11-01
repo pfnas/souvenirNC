@@ -1,0 +1,21 @@
+[
+{ "type": "cover", "title": "Voyage Merveilleux : Été 2024", "subtitle": "Par Phong", "media": null },
+
+{ "type": "content", "layout": "portrait", "media": [ { "url": "images/PHOTO_PORTRAIT_1_EXACTE.jpeg", "caption": "Arrivée dans la métropole animée. L'énergie était palpable !" } ] },
+
+{ "type": "content", "layout": "landscape-pair", "media": [ { "url": "images/PAYSAGE_A_EXACT.jpg", "caption": "Photo du haut" }, { "url": "images/PAYSAGE_B_EXACT.png", "caption": "Photo du bas" } ] },
+
+{
+"type": "content",
+"layout": "video",
+"media": [
+{ "url": "https://www.youtube.com/embed/dQw4w9WgXcQ", "caption": "Le moment le plus drôle du voyage, capturé en vidéo ! (Exemple)" }
+]
+},
+
+{ "type": "content", "layout": "portrait", "media": [ { "url": "images/PHOTO_PORTRAIT_2_EXACTE.jpg", "caption": "Dégustation des spécialités régionales. Un délice !" } ] },
+
+{ "type": "content", "layout": "landscape-pair", "media": [ { "url": "images/PAYSAGE_C_EXACT.jpg", "caption": "Photo du haut" }, { "url": "images/PAYSAGE_D_EXACT.jpg", "caption": "Photo du bas" } ] },
+
+{ "type": "cover", "title": "Fin de l'Aventure", "subtitle": "À bientôt pour de nouvelles découvertes.", "media": null }
+]
