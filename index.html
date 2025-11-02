@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Souvenirs </title>
-  <!-- Chargement de Tailwind CSS pour un style moderne et réactif -->
+  <title>Souvenirs NC</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
@@ -81,29 +80,25 @@
 </head>
 <body class="bg-gray-100 font-sans p-4">
 
-  <!-- Lightbox Modal Structure -->
   <div id="lightboxModal" class="fixed inset-0 bg-black bg-opacity-90 z-50 hidden flex justify-center items-center p-4 cursor-zoom-out opacity-0" aria-modal="true" role="dialog" tabindex="-1">
     <div class="relative max-w-full max-h-full">
       <button id="lightboxClose" class="absolute top-4 right-4 text-white text-4xl font-bold p-2 z-50 cursor-pointer hover:text-red-500 transition duration-150 rounded-full bg-black/50" aria-label="Fermer">
         &times;
       </button>
-      <!-- Image/Video Container -->
       <div id="lightboxContent" class="max-w-[90vw] max-h-[90vh] transition-transform duration-300 transform scale-95" onclick="event.stopPropagation()">
-        <!-- Le média agrandi sera injecté ici -->
-      </div>
+        </div>
       <p id="lightboxCaption" class="text-white text-center mt-3 text-lg font-semibold"></p>
     </div>
   </div>
 
   <div class="max-w-7xl mx-auto py-8">
-    <!-- <h1 class="text-4xl font-extrabold text-center text-green-700 mb-4">
-      Mon Album Souvenirs Interactif
-    </h1> -->
     
+    <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-800 text-center mb-10 tracking-wider">
+        <!-- 💌 Carte Postale -->Carte Postale
+    </h1>
     <div class="flip-book-container">
       <div id="monAlbum" class="rounded-lg shadow-2xl">
-        <!-- Les pages seront ajoutées ici par JavaScript -->
-      </div>
+        </div>
     </div>
    
     <div class="navigation-buttons flex justify-center space-x-4 mt-8">
@@ -115,20 +110,92 @@
       </button>
     </div>
     
+    <div class="test-area max-w-lg mx-auto p-6 bg-white shadow-lg rounded-lg mt-8 hidden">
+      <h2 class="text-xl font-bold text-gray-700 mb-4">🖼️ Stocker une Image en Local (Base64)</h2>
+      <label for="imageUpload" class="block text-sm font-medium text-gray-700 mb-2">
+          Choisir une image à sauvegarder dans le navigateur :
+      </label>
+      <input type="file" id="imageUpload" accept="image/*" class="w-full text-sm text-gray-500
+        file:mr-4 file:py-2 file:px-4
+        file:rounded-full file:border-0
+        file:text-sm file:font-semibold
+        file:bg-green-50 file:text-green-700
+        hover:file:bg-green-100"
+      >
+      <p class="text-xs text-gray-500 mt-2">
+          **Note :** L'image sera stockée en Base64 et ne sera pas perdue si vous quittez cette page.
+      </p>
+      
+      <h3 class="text-lg font-semibold text-gray-700 mt-6 mb-2">Image actuellement sauvegardée :</h3>
+      <img id="savedImageDisplay" class="w-full max-h-64 object-contain rounded-lg border border-gray-300 bg-gray-50 p-2" 
+           src="https://placehold.co/100x50/ccc/fff?text=Rien+sauvegardé" 
+           alt="Image sauvegardée localement" 
+      />
+    </div>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/turn.js/3/turn.min.js"></script>
   
   <script>
-    // --- Simulation des données ---
+    // --- CLÉS DE STOCKAGE LOCAL ---
+    const LAST_PAGE_KEY = 'albumLastPage';
+    const IMAGE_STORAGE_KEY = 'userUploadedImageBase64';
+    
+    // --- Fonctions de Stockage Base64 (pour l'image utilisateur) ---
+    /** Lit un fichier et retourne une Data URL (Base64). */
+    function fileToDataURL(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+            reader.readAsDataURL(file);
+        });
+    }
+
+    /** Stocke une chaîne Base64 dans le localStorage. */
+    function storeImageInLocalStorage(key, dataURL) {
+        try {
+            localStorage.setItem(key, dataURL);
+            console.log(`Image stockée dans localStorage sous la clé: ${key}`);
+        } catch (e) {
+            console.error("Échec du stockage (limite de taille atteinte ?):", e);
+            alert("Erreur: L'image est trop grande pour le stockage local (~5 Mo max).");
+        }
+    }
+
+    /** Récupère une chaîne Base64 depuis le localStorage. */
+    function retrieveImageFromLocalStorage(key) {
+        return localStorage.getItem(key);
+    }
+    // --- FIN Base64 ---
+
+
+    // --- Fonctions de Persistance de Page ---
+
+    // Sauvegarde la page actuelle dans le localStorage
+    function storeCurrentPage(page) {
+        try {
+            localStorage.setItem(LAST_PAGE_KEY, page);
+        } catch (e) {
+            console.error("Erreur de sauvegarde de la page:", e);
+        }
+    }
+
+    // Récupère la dernière page visitée, par défaut la page 1
+    function retrieveLastPage() {
+        const lastPage = parseInt(localStorage.getItem(LAST_PAGE_KEY), 10);
+        // Retourne la page mémorisée si elle est valide (supérieure à 0), sinon 1.
+        return (lastPage > 0) ? lastPage : 1; 
+    }
+    
+    // --- Simulation des données (VOS CHEMINS ET TEXTES ORIGINAUX INCHANGÉS) ---
     const albumData = [
       { type: 'cover', title: 'Six mois en Calédonie', subtitle: 'Il est temps de bientôt reprendre la route', media: null }, 
       { 
         type: 'content', 
         layout: 'text-only', 
         text: `
-          <!-- Classes ajustées: text-lg par défaut, sm:text-xl sur petit écran, md:text-2xl sur moyen/grand écran -->
           <p class="text-lg sm:text-xl md:text-2xl mb-4">"Le vrai voyage de découverte ne consiste pas à chercher de nouveaux paysages, mais à avoir de nouveaux yeux."</p>
           <p class="text-base sm:text-lg font-semibold text-green-600 mb-6"> - Marcel Proust</p>
           <p class="text-sm sm:text-base text-gray-500 italic">Ces six mois m'ont non seulement montré le monde, mais ils m'ont transformé. </p>
@@ -147,14 +214,14 @@
         type: 'content',
         layout: 'video',
         media: [
-          { url: 'videos/VID_20250516_072230.mp4', caption: 'Vidéo 1 : Une arrivée magique' } 
+          { url: 'videos/VID_20250516_072230.mp4', caption: ' Une arrivée magique' } 
         ],
       }, 
       {
           type: 'content',
           layout: 'video',
           media: [
-              { url: 'videos/VID_20250516_072340.mp4', caption: 'Vidéo 2 : Le survol des îlots' }
+              { url: 'videos/VID_20250516_072340.mp4', caption: 'Le survol des îlots' }
           ]
       },
       {
@@ -175,7 +242,7 @@
           type: 'content', 
           layout: 'landscape-only', 
           media: [ 
-              { url: 'images/jardin.webp', caption: 'Petit lever de soleil sur le jardin.' }
+              { url: 'images/jardin.webp', caption: 'Sunrise.' }
           ] 
       }, 
        { 
@@ -192,7 +259,7 @@
               { url: 'images/jardin2.webp', caption: 'Milan' }
           ] 
       },  
-      { type: 'content', layout: 'portrait', media: [ { url: 'images/koe.webp', caption: 'Sur la route de Koé.' } ] },
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/koe.webp', caption: 'Route de Koé.' } ] },
       { 
         type: 'content', 
         layout: 'text-only', 
@@ -209,33 +276,71 @@
       { type: 'content', layout: 'portrait', media: [ { url: 'images/noumea13.webp', caption: 'Architecture locale' } ] },
       { type: 'content', layout: 'portrait', media: [ { url: 'images/noumea2.webp', caption: 'Ciel bleu' } ] },
       { type: 'content', layout: 'portrait', media: [ { url: 'images/noumea4.webp', caption: 'Plage du Kuendu' } ] },
-      { type: 'content', layout: 'portrait', media: [ { url: 'images/noume6.webp', caption: 'Les cocotiers' } ] },
-      { type: 'content', layout: 'portrait', media: [ { url: 'images/noumea8.webp', caption: 'Détail d\'une rue' } ] },
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/noume6.webp', caption: 'Les iles' } ] },
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/noumea8.webp', caption: 'Le grand bleu' } ] },
       { type: 'content', layout: 'portrait', media: [ { url: 'images/numea10.webp', caption: 'Les îles au loin' } ] },
-      { type: 'content', layout: 'portrait', media: [ { url: 'images/noumea12.webp', caption: 'Jardin botanique' } ] },
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/noumea12.webp', caption: 'Sur la plage' } ] },
       
       { 
         type: 'content', 
         layout: 'text-only', 
         text: `
-          <p class="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">Prony !! Le Grand Sud</p>        `
+          <p class="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">Prony !! Le Grand Contraste</p>        `
       },
-      { type: 'content', layout: 'portrait', media: [ { url: 'images/prony.webp', caption: 'Prony' } ] }, 
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/prony.webp', caption: 'Prony en rouge et vert' } ] }, 
        { type: 'content', layout: 'portrait', media: [ { url: 'images/prony1.webp', caption: 'Prony' } ] }, 
        { type: 'content', layout: 'portrait', media: [ { url: 'images/prony2.webp', caption: 'Prony' } ] },
-       { type: 'content', layout: 'portrait', media: [ { url: 'images/prony3.webp', caption: 'Prony' } ] },
+       { type: 'content', layout: 'portrait', media: [ { url: 'images/prony3.webp', caption: 'Prony : la baie' } ] },
        { type: 'content', layout: 'portrait', media: [ { url: 'images/prony4.webp', caption: 'Prony' } ] }, 
-       { type: 'content', layout: 'portrait', media: [ { url: 'images/prony5.webp', caption: 'Prony' } ] }, 
-       { type: 'content', layout: 'portrait', media: [ { url: 'images/prony6.webp', caption: 'Prony' } ] }, 
+       { type: 'content', layout: 'portrait', media: [ { url: 'images/prony5.webp', caption: 'D\'un bagne' } ] }, 
+       { type: 'content', layout: 'portrait', media: [ { url: 'images/prony6.webp', caption: 'à l\'autre' } ] }, 
        { type: 'content', layout: 'portrait', media: [ { url: 'images/prony7.webp', caption: 'Prony' } ] }, 
        { type: 'content', layout: 'portrait', media: [ { url: 'images/prony8.webp', caption: 'Prony' } ] }, 
        { type: 'content', layout: 'portrait', media: [ { url: 'images/prony9.webp', caption: 'Prony' } ] },
-       { type: 'content', layout: 'portrait', media: [ { url: 'images/prony10.webp', caption: 'Prony' } ] },
+       { type: 'content', layout: 'portrait', media: [ { url: 'images/prony10.webp', caption: 'Prony : Sunset' } ] },
        { type: 'content', layout: 'portrait', media: [ { url: 'images/prony11.webp', caption: 'Prony' } ] }, 
-       { type: 'content', layout: 'portrait', media: [ { url: 'images/prony12.webp', caption: 'Prony' } ] },     
+       { type: 'content', layout: 'portrait', media: [ { url: 'images/prony12.webp', caption: 'Prony' } ] }, 
+        { 
+        type: 'content', 
+        layout: 'text-only', 
+        text: `
+          <p class="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">Bourail Grand Ouest</p>        `
+      }, 
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/bourail.webp', caption: 'Bourail : la Roche Percée' } ] }, 
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/bourail1.webp', caption: 'Bourail' } ] }, 
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/bourail2.webp', caption: 'Plage des tortues' } ] },
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/bourail3.webp', caption: 'Bourail' } ] },  
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/bourail4.webp', caption: 'Bourail' } ] },       
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/bourail5.webp', caption: 'Bourail' } ] },
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/bourail6.webp', caption: 'Bourail' } ] }, 
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/bourail7.webp', caption: 'Bourail' } ] }, 
+      { 
+        type: 'content', 
+        layout: 'text-only', 
+        text: `
+          <p class="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">Prendre de la hauteur</p>        `
+      },
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/montagne.webp', caption: 'Sur les hauteurs' } ] },       
+      // { type: 'content', layout: 'portrait', media: [ { url: 'images/montagne2.webp', caption: 'Sur les hauteurs' } ] },
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/montagne3.webp', caption: 'Sur les hauteurs' } ] },
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/montagne1.webp', caption: 'Sur les hauteurs' } ] },
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/montagne4.webp', caption: 'Sur les hauteurs' } ] }, 
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/montagne5.webp', caption: 'Sur les hauteurs' } ] },
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/montagne6.webp', caption: 'Sur les hauteurs' } ] }, 
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/montagne7.webp', caption: 'Sur les hauteurs' } ] },
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/montagne8.webp', caption: 'Sur les hauteurs' } ] },     
+      { type: 'content', layout: 'portrait', media: [ { url: 'images/montagne9.webp', caption: 'Sur les hauteurs' } ] }, 
+       { 
+        type: 'content', 
+        layout: 'text-only', 
+        text: `
+          <p class="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">To be continued...</p>        `
+      }, 
       { type: 'content', layout: 'portrait', media: [ { url: 'images/mon_camion.webp', caption: 'Comprenne qui pourra' } ] }, 
       { type: 'cover', title: 'Bye la Province Sud', subtitle: 'To be continued...', media: null } 
     ];
+    // --- FIN DES DONNÉES ORIGINALES ---
+
 
     const $album = $('#monAlbum');
     const $prevBtn = $('#prevBtn');
@@ -263,9 +368,11 @@
         $lightboxContent.empty();
         $lightboxCaption.text(caption);
 
-        // Configuration du placeholder générique
+        // Si l'URL correspond à notre clé de stockage local, on utilise le Base64 stocké
+        const isUserImage = url === IMAGE_STORAGE_KEY;
+        const mediaSource = isUserImage ? retrieveImageFromLocalStorage(IMAGE_STORAGE_KEY) : url;
+        
         const placeholder = `https://placehold.co/600x400/b91c1c/ffffff?text=FICHIER+NON+TROUVÉ`;
-        const fallbackAction = `this.onerror=null; this.src='${placeholder}'; console.error('Erreur de chargement du média:', '${url}');`;
         
         if (isVideo) {
              // Vidéo (avec autoplay et boucle dans la modal)
@@ -274,15 +381,16 @@
                        poster="${placeholder}"
                        onerror="this.poster='${placeholder}'; console.error('Erreur de chargement de la vidéo:', '${url}');"
                 >
-                    <source src="${url}" type="video/mp4">
+                    <source src="${mediaSource}" type="video/mp4">
                     Votre navigateur ne supporte pas la balise vidéo.
                 </video>
              `);
         } else {
             // Image
+            // Note: Pour Base64, l'onerror ne fonctionnera pas, mais le src est déjà le Base64
             $lightboxContent.html(`
-                <img src="${url}" alt="${caption}" 
-                     onerror="${fallbackAction}"
+                <img src="${mediaSource}" alt="${caption}" 
+                     onerror="this.onerror=null; this.src='${placeholder}'; console.error('Erreur de chargement du média:', '${url}');"
                      class="max-w-[90vw] max-h-[90vh] rounded-lg shadow-2xl transition-transform duration-300"
                 >
             `);
@@ -323,20 +431,37 @@
         // Configuration du placeholder générique
         const dimensions = isLandscape ? '600x450' : '400x550';
         const placeholder = `https://placehold.co/${dimensions}/b91c1c/ffffff?text=FICHIER+NON+TROUVÉ`;
-        const fallbackAction = `this.onerror=null; this.src='${placeholder}'; console.error('Erreur de chargement du média:', '${media.url}');`;
+        
+        // La gestion du média est spéciale s'il s'agit de l'image utilisateur stockée localement
+        const isUserImage = media.url === IMAGE_STORAGE_KEY; 
+        
+        let mediaSource = media.url;
+        let imageElementAttributes = '';
+        
+        if (isUserImage) {
+            // Si c'est l'image locale, on récupère le Base64
+            const dataURL = retrieveImageFromLocalStorage(IMAGE_STORAGE_KEY);
+            mediaSource = dataURL || placeholder;
+            imageElementAttributes = `src="${mediaSource}"`;
+        } else {
+            // Sinon, c'est un média normal (distant ou local au serveur)
+            const fallbackAction = `this.onerror=null; this.src='${placeholder}'; console.error('Erreur de chargement du média:', '${media.url}');`;
+            imageElementAttributes = `src="${media.url}" onerror="${fallbackAction}"`;
+        }
+        
         
         // Classes de base
-        // Ajout de 'cursor-zoom-in' pour indiquer que l'élément est cliquable (Lightbox)
         const baseClasses = "shadow-md object-contain w-full h-full cursor-zoom-in";
         
         // Échapper les guillemets simples pour l'appel JS
         const safeCaption = (media.caption || '').replace(/'/g, "\\'");
         
         // Fonction d'ouverture pour l'événement onclick
-        const openLightboxFn = `openLightbox('${media.url}', '${safeCaption}', ${isVideo})`;
+        const openLightboxFn = `openLightbox('${media.url}', '${safeCaption}', ${isVideo})`; // Important : on passe l'URL originale pour la Lightbox.
 
 
         if (isVideo) {
+             // La logique vidéo ne change pas, car le stockage local n'est pas optimisé pour les vidéos lourdes.
             return `
                 <div class="media-content-wrapper w-full h-full flex justify-center items-center relative" onclick="${openLightboxFn}">
                     <video controls preload="metadata" 
@@ -349,7 +474,6 @@
                         >
                         Votre navigateur ne supporte pas la balise vidéo.
                     </video>
-                    <!-- Masque pour capturer le clic et ouvrir la Lightbox -->
                     <div class="absolute inset-0 bg-transparent flex justify-center items-center z-10 opacity-0 hover:opacity-100 transition duration-300">
                         <svg class="w-1/4 h-1/4 text-white p-4 bg-black/70 rounded-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M15 8V4.5L19.5 9H15V8ZM14 10V3H6C5.45 3 5 3.45 5 4V20C5 20.55 5.45 21 6 21H18C18.55 21 19 20.55 19 20V11H14.5C14.22 11 14 10.78 14 10.5V10Z" opacity="0.4"></path><path d="M12 18V16C12 15.45 12.45 15 13 15H17C17.55 15 18 15.45 18 16V18C18 18.55 17.55 19 17 19H13C12.45 19 12 18.55 12 18ZM13 16H17V18H13V16Z" opacity="0.4"></path><path d="M18 2H11L5 8V20C5 21.11 5.9 22 7 22H17C18.11 22 19 21.11 19 20V3C19 2.45 18.55 2 18 2ZM17 20H7V4H10V9H16V20H17V20ZM12 18V16C12 15.45 12.45 15 13 15H17C17.55 15 18 15.45 18 16V18C18 18.55 17.55 19 17 19H13C12.45 19 12 18.55 12 18Z"></path></svg>
                     </div>
@@ -357,8 +481,7 @@
             `;
         } else {
             return `
-                <img src="${media.url}" alt="${media.caption || 'Image du souvenir'}" 
-                     onerror="${fallbackAction}"
+                <img ${imageElementAttributes} alt="${media.caption || 'Image du souvenir'}" 
                      onclick="${openLightboxFn}"
                      class="${baseClasses}"
                 >
@@ -382,7 +505,6 @@
           <div class="cover-page flex flex-col justify-center items-center w-full h-full p-8 text-white bg-green-800 rounded-lg">
             <h2 class="w-full text-4xl md:text-6xl font-extrabold text-center">${data.title}</h2>
             <p class="w-full text-xl md:text-2xl mt-6 font-light text-center">${data.subtitle}</p>
-            <!-- Suppression du mot "Page" ici aussi -->
             <p class="absolute bottom-4 right-4 text-sm font-light opacity-70">${pageNumber}</p>
           </div>
         `;
@@ -407,7 +529,6 @@
              // Texte Centré
             contentHTML = `
                 <div class="content-page-wrapper p-8 justify-center bg-gray-50/70 rounded-lg">
-                    <!-- J'ai retiré les classes de taille de texte ici pour les définir dans albumData -->
                     <div class="max-w-md mx-auto font-serif text-gray-800 leading-relaxed flex-grow flex flex-col justify-center">
                         ${data.text}
                     </div>
@@ -461,6 +582,8 @@
         finalWidth = Math.round(finalWidth);
         finalHeight = Math.round(finalHeight);
         
+        // Récupérer la dernière page visitée au chargement (Persistance)
+        const startPage = retrieveLastPage();
 
         if (!isTurnInitialized) {
             
@@ -477,7 +600,9 @@
                 elevation: 50,      
                 gradients: true,    
                 duration: 2000,
-                pages: totalPages 
+                pages: totalPages,
+                // Définir la page de départ mémorisée
+                page: startPage 
             });
             
             isTurnInitialized = true;
@@ -485,6 +610,8 @@
             
             // 2. Gestion des événements
             $album.on('turning', function(event, page, view) {
+                // Sauvegarder la page actuelle à chaque fois qu'on tourne
+                storeCurrentPage(page);
                 updateNavigation(page);
             });
             
@@ -526,10 +653,46 @@
     // --- Initialisation de l'application ---
     $(document).ready(function() {
       
+      // LOGIQUE BASE64 POUR L'IMAGE UTILISATEUR
+      const $imageUpload = $('#imageUpload');
+      const $savedImageDisplay = $('#savedImageDisplay');
+
+      function displaySavedImage() {
+          const savedDataURL = retrieveImageFromLocalStorage(IMAGE_STORAGE_KEY);
+          // Si l'image existe, on met à jour le tag <img> de la zone de test.
+          // Même si la zone est cachée, le Base64 est prêt pour le rendu dans la page/lightbox
+          if (savedDataURL) {
+              $savedImageDisplay.attr('src', savedDataURL);
+          }
+      }
+      
+      // L'événement 'change' est purement JS et n'actualise PAS la page.
+      $imageUpload.on('change', async function() {
+          const file = this.files[0];
+          if (file) {
+              // On peut retirer l'indicateur visuel puisqu'il est caché, mais gardons la logique de progression/erreur
+              // $savedImageDisplay.attr('src', "..."); 
+              try {
+                  const dataURL = await fileToDataURL(file);
+                  storeImageInLocalStorage(IMAGE_STORAGE_KEY, dataURL);
+                  displaySavedImage();
+              } catch (error) {
+                  console.error("Erreur de conversion ou de stockage:", error);
+                  // On peut aussi masquer l'alerte puisque l'utilisateur ne la verra pas...
+                  // alert("Une erreur est survenue lors du traitement du fichier."); 
+              }
+          }
+      });
+      
+      // Charger l'image au démarrage de la zone de test
+      displaySavedImage();
+      // FIN LOGIQUE BASE64
+
       // Déterminer l'état initial avant l'initialisation de Turn.js
       const initialWidth = $('.flip-book-container')[0].clientWidth;
       isCurrentlySinglePageMode = initialWidth < SPREAD_WIDTH_THRESHOLD;
       
+      // Redimensionnement et initialisation de l'album (qui charge la page sauvegardée)
       resizeAlbum();
       
       // Adaptation à la taille de l'écran lors du redimensionnement
