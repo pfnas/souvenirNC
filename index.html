@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Souvenirs NC</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -76,6 +76,9 @@
     #lightboxModal {
         transition: opacity 0.3s ease-in-out;
     }
+
+    /* Petit style pour le footer page-number text */
+    .page-footer { user-select: none; }
   </style>
 </head>
 <body class="bg-gray-100 font-sans p-4">
@@ -86,21 +89,20 @@
         &times;
       </button>
       <div id="lightboxContent" class="max-w-[90vw] max-h-[90vh] transition-transform duration-300 transform scale-95" onclick="event.stopPropagation()">
-        </div>
+      </div>
       <p id="lightboxCaption" class="text-white text-center mt-3 text-lg font-semibold"></p>
     </div>
   </div>
 
   <div class="max-w-7xl mx-auto py-8">
-    
     <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-800 text-center mb-10 tracking-wider">
-        <!-- 💌 Carte Postale -->Carte Postale
+        Carte Postale
     </h1>
+
     <div class="flip-book-container">
-      <div id="monAlbum" class="rounded-lg shadow-2xl">
-        </div>
+      <div id="monAlbum" class="rounded-lg shadow-2xl"></div>
     </div>
-   
+
     <div class="navigation-buttons flex justify-center space-x-4 mt-8">
       <button id="prevBtn" class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-full shadow-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
         ← Précédent
@@ -109,7 +111,7 @@
         Suivant →
       </button>
     </div>
-    
+
     <div class="test-area max-w-lg mx-auto p-6 bg-white shadow-lg rounded-lg mt-8 hidden">
       <h2 class="text-xl font-bold text-gray-700 mb-4">🖼️ Stocker une Image en Local (Base64)</h2>
       <label for="imageUpload" class="block text-sm font-medium text-gray-700 mb-2">
@@ -125,7 +127,6 @@
       <p class="text-xs text-gray-500 mt-2">
           **Note :** L'image sera stockée en Base64 et ne sera pas perdue si vous quittez cette page.
       </p>
-      
       <h3 class="text-lg font-semibold text-gray-700 mt-6 mb-2">Image actuellement sauvegardée :</h3>
       <img id="savedImageDisplay" class="w-full max-h-64 object-contain rounded-lg border border-gray-300 bg-gray-50 p-2" 
            src="https://placehold.co/100x50/ccc/fff?text=Rien+sauvegardé" 
@@ -136,14 +137,13 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/turn.js/3/turn.min.js"></script>
-  
+
   <script>
     // --- CLÉS DE STOCKAGE LOCAL ---
     const LAST_PAGE_KEY = 'albumLastPage';
     const IMAGE_STORAGE_KEY = 'userUploadedImageBase64';
-    
-    // --- Fonctions de Stockage Base64 (pour l'image utilisateur) ---
-    /** Lit un fichier et retourne une Data URL (Base64). */
+
+    // --- Fonctions Base64 ---
     function fileToDataURL(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -153,7 +153,6 @@
         });
     }
 
-    /** Stocke une chaîne Base64 dans le localStorage. */
     function storeImageInLocalStorage(key, dataURL) {
         try {
             localStorage.setItem(key, dataURL);
@@ -164,16 +163,11 @@
         }
     }
 
-    /** Récupère une chaîne Base64 depuis le localStorage. */
     function retrieveImageFromLocalStorage(key) {
         return localStorage.getItem(key);
     }
-    // --- FIN Base64 ---
 
-
-    // --- Fonctions de Persistance de Page ---
-
-    // Sauvegarde la page actuelle dans le localStorage
+    // --- Persistance page ---
     function storeCurrentPage(page) {
         try {
             localStorage.setItem(LAST_PAGE_KEY, page);
@@ -182,16 +176,16 @@
         }
     }
 
-    // Récupère la dernière page visitée, par défaut la page 1
     function retrieveLastPage() {
         const lastPage = parseInt(localStorage.getItem(LAST_PAGE_KEY), 10);
-        // Retourne la page mémorisée si elle est valide (supérieure à 0), sinon 1.
-        return (lastPage > 0) ? lastPage : 1; 
+        return (lastPage > 0) ? lastPage : 1;
     }
-    
-    // --- Simulation des données (VOS CHEMINS ET TEXTES ORIGINAUX INCHANGÉS) ---
+
+    // --- Données de l'album (ORIGINALES) ---
     const albumData = [
-      { type: 'cover', title: 'Six mois en Calédonie', subtitle: 'Il est temps de bientôt reprendre la route', media: null }, 
+      // COVER with image under title (path requested)
+      { type: 'cover', title: 'Six mois en Calédonie', subtitle: 'Il est temps de bientôt reprendre la route', media: { url: 'images/imagesNC_resultat.webp', caption: 'Souvenirs NC' } }, 
+
       { 
         type: 'content', 
         layout: 'text-only', 
@@ -309,6 +303,7 @@
       { type: 'content', layout: 'portrait', media: [ { url: 'images/bourail.webp', caption: 'Bourail : la Roche Percée' } ] }, 
       { type: 'content', layout: 'portrait', media: [ { url: 'images/bourail1.webp', caption: 'Bourail' } ] }, 
       { type: 'content', layout: 'portrait', media: [ { url: 'images/bourail2.webp', caption: 'Plage des tortues' } ] },
+       { type: 'content', layout: 'portrait', media: [ { url: 'images/bourail8.webp', caption: 'Plage des tortues' } ] },
       { type: 'content', layout: 'portrait', media: [ { url: 'images/bourail3.webp', caption: 'Bourail' } ] },  
       { type: 'content', layout: 'portrait', media: [ { url: 'images/bourail4.webp', caption: 'Bourail' } ] },       
       { type: 'content', layout: 'portrait', media: [ { url: 'images/bourail5.webp', caption: 'Bourail' } ] },
@@ -321,7 +316,6 @@
           <p class="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">Prendre de la hauteur</p>        `
       },
       { type: 'content', layout: 'portrait', media: [ { url: 'images/montagne.webp', caption: 'Sur les hauteurs' } ] },       
-      // { type: 'content', layout: 'portrait', media: [ { url: 'images/montagne2.webp', caption: 'Sur les hauteurs' } ] },
       { type: 'content', layout: 'portrait', media: [ { url: 'images/montagne3.webp', caption: 'Sur les hauteurs' } ] },
       { type: 'content', layout: 'portrait', media: [ { url: 'images/montagne1.webp', caption: 'Sur les hauteurs' } ] },
       { type: 'content', layout: 'portrait', media: [ { url: 'images/montagne4.webp', caption: 'Sur les hauteurs' } ] }, 
@@ -341,7 +335,6 @@
     ];
     // --- FIN DES DONNÉES ORIGINALES ---
 
-
     const $album = $('#monAlbum');
     const $prevBtn = $('#prevBtn');
     const $nextBtn = $('#nextBtn');
@@ -354,28 +347,23 @@
     // Seuil de largeur pour basculer en mode double page (Desktop)
     const SPREAD_WIDTH_THRESHOLD = 1024; 
     
-    // --- Lightbox Functions ---
+    // --- Lightbox elements ---
     const $lightboxModal = $('#lightboxModal');
     const $lightboxContent = $('#lightboxContent');
     const $lightboxClose = $('#lightboxClose');
     const $lightboxCaption = $('#lightboxCaption');
 
-    // Ouvre la lightbox avec le média spécifié
+    // Open lightbox
     function openLightbox(url, caption, isVideo) {
-        // Empêche le défilement de la page arrière
         $('body').addClass('overflow-hidden');
-        
         $lightboxContent.empty();
-        $lightboxCaption.text(caption);
+        $lightboxCaption.text(caption || '');
 
-        // Si l'URL correspond à notre clé de stockage local, on utilise le Base64 stocké
         const isUserImage = url === IMAGE_STORAGE_KEY;
         const mediaSource = isUserImage ? retrieveImageFromLocalStorage(IMAGE_STORAGE_KEY) : url;
-        
         const placeholder = `https://placehold.co/600x400/b91c1c/ffffff?text=FICHIER+NON+TROUVÉ`;
-        
+
         if (isVideo) {
-             // Vidéo (avec autoplay et boucle dans la modal)
              $lightboxContent.html(`
                 <video controls loop autoplay class="max-w-[90vw] max-h-[90vh] rounded-lg shadow-2xl bg-black"
                        poster="${placeholder}"
@@ -386,82 +374,56 @@
                 </video>
              `);
         } else {
-            // Image
-            // Note: Pour Base64, l'onerror ne fonctionnera pas, mais le src est déjà le Base64
             $lightboxContent.html(`
-                <img src="${mediaSource}" alt="${caption}" 
+                <img src="${mediaSource}" alt="${caption || ''}" 
                      onerror="this.onerror=null; this.src='${placeholder}'; console.error('Erreur de chargement du média:', '${url}');"
                      class="max-w-[90vw] max-h-[90vh] rounded-lg shadow-2xl transition-transform duration-300"
                 >
             `);
         }
-        
-        // Afficher la modal avec transition
+
         $lightboxModal.removeClass('hidden').attr('aria-hidden', 'false');
         setTimeout(() => $lightboxModal.css('opacity', '1'), 10);
         $lightboxClose.focus(); 
     }
 
-    // Ferme la lightbox
     function closeLightbox() {
-        // Cacher la modal avec transition
         $lightboxModal.css('opacity', '0').attr('aria-hidden', 'true');
-        
-        // Attendre la fin de la transition avant de masquer
         setTimeout(() => {
             $lightboxModal.addClass('hidden');
-            $lightboxContent.empty(); 
-            $('body').removeClass('overflow-hidden'); 
+            $lightboxContent.empty();
+            $('body').removeClass('overflow-hidden');
         }, 300);
     }
 
-    // Gestionnaires d'événements pour la fermeture
     $lightboxClose.on('click', closeLightbox);
-    $lightboxModal.on('click', closeLightbox); // Fermer en cliquant sur le fond
-    $lightboxContent.on('click', (e) => e.stopPropagation()); // Empêcher la fermeture en cliquant sur le contenu
+    $lightboxModal.on('click', closeLightbox);
+    $lightboxContent.on('click', (e) => e.stopPropagation());
 
-    // --- Media Rendering Functions ---
-
-    // Fonction utilitaire pour créer la balise média (Image ou Vidéo)
+    // Render media (image or video)
     function renderMediaElement(media, isLandscape) {
         if (!media || !media.url) return '';
-
         const isVideo = media.url.toLowerCase().endsWith('.mp4');
-        
-        // Configuration du placeholder générique
         const dimensions = isLandscape ? '600x450' : '400x550';
         const placeholder = `https://placehold.co/${dimensions}/b91c1c/ffffff?text=FICHIER+NON+TROUVÉ`;
-        
-        // La gestion du média est spéciale s'il s'agit de l'image utilisateur stockée localement
-        const isUserImage = media.url === IMAGE_STORAGE_KEY; 
-        
+        const isUserImage = media.url === IMAGE_STORAGE_KEY;
         let mediaSource = media.url;
         let imageElementAttributes = '';
-        
+
         if (isUserImage) {
-            // Si c'est l'image locale, on récupère le Base64
             const dataURL = retrieveImageFromLocalStorage(IMAGE_STORAGE_KEY);
             mediaSource = dataURL || placeholder;
             imageElementAttributes = `src="${mediaSource}"`;
         } else {
-            // Sinon, c'est un média normal (distant ou local au serveur)
             const fallbackAction = `this.onerror=null; this.src='${placeholder}'; console.error('Erreur de chargement du média:', '${media.url}');`;
             imageElementAttributes = `src="${media.url}" onerror="${fallbackAction}"`;
         }
-        
-        
-        // Classes de base
-        const baseClasses = "shadow-md object-contain w-full h-full cursor-zoom-in";
-        
-        // Échapper les guillemets simples pour l'appel JS
-        const safeCaption = (media.caption || '').replace(/'/g, "\\'");
-        
-        // Fonction d'ouverture pour l'événement onclick
-        const openLightboxFn = `openLightbox('${media.url}', '${safeCaption}', ${isVideo})`; // Important : on passe l'URL originale pour la Lightbox.
 
+        const baseClasses = "shadow-md object-contain w-full h-full cursor-zoom-in";
+        const safeCaption = (media.caption || '').replace(/'/g, "\\'");
+        const openLightboxFn = `openLightbox('${media.url}', '${safeCaption}', ${isVideo})`;
 
         if (isVideo) {
-             // La logique vidéo ne change pas, car le stockage local n'est pas optimisé pour les vidéos lourdes.
             return `
                 <div class="media-content-wrapper w-full h-full flex justify-center items-center relative" onclick="${openLightboxFn}">
                     <video controls preload="metadata" 
@@ -469,9 +431,7 @@
                            class="${baseClasses} bg-black"
                            onerror="this.poster='${placeholder}'; console.error('Erreur de chargement de la vidéo:', '${media.url}');"
                     >
-                        <source src="${media.url}" type="video/mp4" 
-                                onerror="this.parentNode.onerror();"
-                        >
+                        <source src="${media.url}" type="video/mp4">
                         Votre navigateur ne supporte pas la balise vidéo.
                     </video>
                     <div class="absolute inset-0 bg-transparent flex justify-center items-center z-10 opacity-0 hover:opacity-100 transition duration-300">
@@ -488,33 +448,39 @@
             `;
         }
     }
-    
-    // Fonction utilitaire pour créer le contenu de chaque page
+
+    // Create a page element (cover or content)
     function createPageElement(data, index) {
       let contentHTML = '';
       const isCover = (index === 0 || index === albumData.length - 1);
       const pageNumber = index + 1;
-      
-      // Suppression du mot "Page"
       const pageNumberHtml = `<p class="page-footer text-xs text-gray-400 flex-none mt-1">${pageNumber}</p>`;
 
-
-      // La première et la dernière page sont des couvertures
       if (isCover) {
+        // CORRECTION ANTI-DÉBORDEMENT APPLIQUÉE ICI
         contentHTML = `
-          <div class="cover-page flex flex-col justify-center items-center w-full h-full p-8 text-white bg-green-800 rounded-lg">
-            <h2 class="w-full text-4xl md:text-6xl font-extrabold text-center">${data.title}</h2>
-            <p class="w-full text-xl md:text-2xl mt-6 font-light text-center">${data.subtitle}</p>
+          <div class="cover-page flex flex-col justify-around items-center w-full h-full p-6 text-white bg-green-800 rounded-lg relative overflow-hidden">
+            
+            <h2 class="w-full text-4xl md:text-6xl font-extrabold text-center mt-2">${data.title}</h2>
+            
+            ${data.media && data.media.url ? `
+              <div class="mt-4 mb-4 w-full flex justify-center flex-grow items-center min-h-0">
+                <img src="${data.media.url}" alt="${(data.media.caption||'Illustration de couverture')}" 
+                     onerror="this.onerror=null; this.src='https://placehold.co/600x400/f87171/fff?text=FICHIER+NON+TROUVÉ';"
+                     class="max-w-full max-h-full object-contain rounded-lg shadow-2xl border-4 border-white p-2">
+              </div>
+            ` : ''}
+            
+            <p class="w-full text-xl md:text-2xl font-light text-center mb-2">${data.subtitle || ''}</p>
+            
             <p class="absolute bottom-4 right-4 text-sm font-light opacity-70">${pageNumber}</p>
           </div>
         `;
       } else {
-        // Pages de contenu
-        
+        // CONTENT pages
         if (data.layout === 'portrait' || data.layout === 'landscape-only' || data.layout === 'video') {
             const media = Array.isArray(data.media) ? data.media[0] : null;
             const isLandscape = data.layout === 'landscape-only';
-            
             contentHTML = `
               <div class="content-page-wrapper">
                   <div class="media-area">
@@ -524,9 +490,7 @@
                   ${pageNumberHtml}
               </div>
             `;
-
         } else if (data.layout === 'text-only') {
-             // Texte Centré
             contentHTML = `
                 <div class="content-page-wrapper p-8 justify-center bg-gray-50/70 rounded-lg">
                     <div class="max-w-md mx-auto font-serif text-gray-800 leading-relaxed flex-grow flex flex-col justify-center">
@@ -535,44 +499,45 @@
                     ${pageNumberHtml}
                 </div>
             `;
+        } else {
+            // fallback
+            contentHTML = `
+                <div class="content-page-wrapper p-8 justify-center bg-gray-50/70 rounded-lg">
+                    <div class="max-w-md mx-auto font-serif text-gray-800 leading-relaxed flex-grow flex flex-col justify-center">
+                        <p class="text-sm text-gray-500">Contenu non défini pour cette page.</p>
+                    </div>
+                    ${pageNumberHtml}
+                </div>
+            `;
         }
       }
-      
+
       const pageElement = $('<div></div>').addClass('page').attr('id', `page-${index + 1}`).html(contentHTML);
-      
       if (isCover) {
           pageElement.addClass('cover-page').removeClass('page');
       }
-
       return pageElement[0].outerHTML;
     }
 
-    // Fonction principale pour gérer le redimensionnement et l'affichage (single/double)
+    // Resize + init turn.js
     function resizeAlbum() {
         const container = $('.flip-book-container')[0];
         const maxContainerWidth = container.clientWidth;
         const maxContainerHeight = window.innerHeight * 0.9; 
         const totalPages = albumData.length;
-        
-        // Détermination du mode d'affichage
-        const shouldBeSinglePageMode = maxContainerWidth < SPREAD_WIDTH_THRESHOLD; 
-        
+        const shouldBeSinglePageMode = maxContainerWidth < SPREAD_WIDTH_THRESHOLD;
         let finalWidth, finalHeight;
-        
+
         if (shouldBeSinglePageMode) {
-            // Mode Simple Page (Mobile/Écran étroit)
-            finalHeight = Math.min(maxContainerHeight * 0.9, 600); 
+            finalHeight = Math.min(maxContainerHeight * 0.9, 600);
             finalWidth = finalHeight / PAGE_ASPECT_RATIO;
-            
             if (finalWidth > maxContainerWidth * 0.95) {
                 finalWidth = maxContainerWidth * 0.95;
                 finalHeight = finalWidth * PAGE_ASPECT_RATIO;
             }
         } else {
-            // Mode Double Page (Desktop/Écran large)
-            finalHeight = Math.min(maxContainerHeight * 0.9, 800); 
-            finalWidth = finalHeight * PAGE_ASPECT_RATIO * 2; 
-            
+            finalHeight = Math.min(maxContainerHeight * 0.9, 800);
+            finalWidth = finalHeight * PAGE_ASPECT_RATIO * 2;
             if (finalWidth > maxContainerWidth * 0.95) {
                 finalWidth = maxContainerWidth * 0.95;
                 finalHeight = finalWidth / (PAGE_ASPECT_RATIO * 2);
@@ -581,40 +546,33 @@
 
         finalWidth = Math.round(finalWidth);
         finalHeight = Math.round(finalHeight);
-        
-        // Récupérer la dernière page visitée au chargement (Persistance)
         const startPage = retrieveLastPage();
 
         if (!isTurnInitialized) {
-            
-            // 1. Initialisation : Injection des pages et Turn.js
             albumData.forEach((data, index) => {
                 $album.append(createPageElement(data, index));
             });
-            
+
             $album.turn({
-                width: finalWidth,         
-                height: finalHeight,        
-                autoCenter: true,   
-                display: shouldBeSinglePageMode ? 'single' : 'double', 
-                elevation: 50,      
-                gradients: true,    
+                width: finalWidth,
+                height: finalHeight,
+                autoCenter: true,
+                display: shouldBeSinglePageMode ? 'single' : 'double',
+                elevation: 50,
+                gradients: true,
                 duration: 2000,
                 pages: totalPages,
-                // Définir la page de départ mémorisée
-                page: startPage 
+                page: startPage
             });
-            
+
             isTurnInitialized = true;
             $album.css('visibility', 'visible');
-            
-            // 2. Gestion des événements
+
             $album.on('turning', function(event, page, view) {
-                // Sauvegarder la page actuelle à chaque fois qu'on tourne
                 storeCurrentPage(page);
                 updateNavigation(page);
             });
-            
+
             $prevBtn.on('click', function() {
                 $album.turn('previous');
             });
@@ -622,87 +580,69 @@
             $nextBtn.on('click', function() {
                 $album.turn('next');
             });
-            
-            updateNavigation($album.turn('page') || 1); 
 
+            updateNavigation($album.turn('page') || 1);
         } else {
-            // Si déjà initialisé, ajuster la taille et le mode
             $album.turn('size', finalWidth, finalHeight);
-            
-            // Mise à jour du mode d'affichage si nécessaire
             if (shouldBeSinglePageMode !== isCurrentlySinglePageMode) {
                 $album.turn('display', shouldBeSinglePageMode ? 'single' : 'double');
                 isCurrentlySinglePageMode = shouldBeSinglePageMode;
             }
-            
             $album.turn('center');
             updateNavigation($album.turn('page'));
         }
     }
-    
-    // Fonction pour mettre à jour l'état des boutons
+
     function updateNavigation(page) {
       if ($album.data('__turn_instance')) {
           const totalPages = $album.turn('pages');
-          
-          $prevBtn.prop('disabled', page <= 1); 
+          $prevBtn.prop('disabled', page <= 1);
           $nextBtn.prop('disabled', page >= totalPages);
       }
     }
-    
-    // --- Initialisation de l'application ---
+
+    // --- Init app ---
     $(document).ready(function() {
-      
-      // LOGIQUE BASE64 POUR L'IMAGE UTILISATEUR
+      // Base64 upload logic (zone hidden but functional)
       const $imageUpload = $('#imageUpload');
       const $savedImageDisplay = $('#savedImageDisplay');
 
       function displaySavedImage() {
           const savedDataURL = retrieveImageFromLocalStorage(IMAGE_STORAGE_KEY);
-          // Si l'image existe, on met à jour le tag <img> de la zone de test.
-          // Même si la zone est cachée, le Base64 est prêt pour le rendu dans la page/lightbox
           if (savedDataURL) {
               $savedImageDisplay.attr('src', savedDataURL);
           }
       }
-      
-      // L'événement 'change' est purement JS et n'actualise PAS la page.
+
       $imageUpload.on('change', async function() {
           const file = this.files[0];
           if (file) {
-              // On peut retirer l'indicateur visuel puisqu'il est caché, mais gardons la logique de progression/erreur
-              // $savedImageDisplay.attr('src', "..."); 
               try {
                   const dataURL = await fileToDataURL(file);
                   storeImageInLocalStorage(IMAGE_STORAGE_KEY, dataURL);
                   displaySavedImage();
               } catch (error) {
                   console.error("Erreur de conversion ou de stockage:", error);
-                  // On peut aussi masquer l'alerte puisque l'utilisateur ne la verra pas...
-                  // alert("Une erreur est survenue lors du traitement du fichier."); 
               }
           }
       });
-      
-      // Charger l'image au démarrage de la zone de test
-      displaySavedImage();
-      // FIN LOGIQUE BASE64
 
-      // Déterminer l'état initial avant l'initialisation de Turn.js
+      displaySavedImage();
+
+      // initial mode detection
       const initialWidth = $('.flip-book-container')[0].clientWidth;
       isCurrentlySinglePageMode = initialWidth < SPREAD_WIDTH_THRESHOLD;
-      
-      // Redimensionnement et initialisation de l'album (qui charge la page sauvegardée)
+
+      // initialize/responsive
       resizeAlbum();
-      
-      // Adaptation à la taille de l'écran lors du redimensionnement
+
       let resizeTimeout;
       $(window).resize(function() {
           clearTimeout(resizeTimeout);
-          // Appel de resizeAlbum à chaque redimensionnement (avec debounce)
-          resizeTimeout = setTimeout(resizeAlbum, 100); 
+          resizeTimeout = setTimeout(resizeAlbum, 100);
       });
     });
+
   </script>
 </body>
 </html>
