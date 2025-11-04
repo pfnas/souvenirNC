@@ -79,6 +79,18 @@
 
     /* Petit style pour le footer page-number text */
     .page-footer { user-select: none; }
+
+    /* Styles pour les boutons de défilement (Index) */
+    .scroll-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        outline: none;
+        padding: 0;
+    }
+    .scroll-btn:disabled {
+        cursor: not-allowed;
+    }
   </style>
 </head>
 <body class="bg-gray-100 font-sans p-4">
@@ -181,11 +193,76 @@
         return (lastPage > 0) ? lastPage : 1;
     }
 
+    // --- Logique de Défilement (Index Page 2) ---
+    const SCROLL_AMOUNT = 100; 
+
+    /** Trouve le conteneur de liste défilable à partir d'un élément enfant. */
+    function getScrollableContainer(buttonElement) {
+        // Trouve l'élément de page le plus proche, puis l'enfant ciblé par son ID
+        const $pageElement = $(buttonElement).closest('.page, .cover-page');
+        return $pageElement.find('#indexListContainer');
+    }
+
+    /** Met à jour l'état (activé/désactivé) des boutons de défilement */
+    function updateScrollButtons($container) {
+        const scrollTop = $container.scrollTop();
+        const scrollHeight = $container[0].scrollHeight;
+        const clientHeight = $container[0].clientHeight;
+        
+        const $page = $container.closest('.page, .cover-page');
+        const $upBtn = $page.find('.scroll-up-btn');
+        const $downBtn = $page.find('.scroll-down-btn');
+
+        // Désactiver UP si on est tout en haut
+        const isAtTop = scrollTop <= 0;
+        if ($upBtn.length) {
+            $upBtn.prop('disabled', isAtTop);
+            $upBtn.css('opacity', isAtTop ? '0.2' : '1');
+        }
+
+        // Désactiver DOWN si on est tout en bas (avec une petite marge d'erreur)
+        const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1;
+        if ($downBtn.length) {
+            $downBtn.prop('disabled', isAtBottom);
+            $downBtn.css('opacity', isAtBottom ? '0.2' : '1');
+        }
+    }
+
+    /** Défile la liste d'index vers le bas */
+    function scrollIndexDown(buttonElement) {
+        scrollIndexBy(buttonElement, SCROLL_AMOUNT);
+    }
+
+    /** Défile la liste d'index vers le haut */
+    function scrollIndexUp(buttonElement) {
+        scrollIndexBy(buttonElement, -SCROLL_AMOUNT);
+    }
+    
+    /** Fonction générale de défilement */
+    function scrollIndexBy(buttonElement, delta) {
+        const $container = getScrollableContainer(buttonElement);
+        if ($container.length === 0) return;
+
+        const currentScroll = $container.scrollTop();
+        const newScroll = currentScroll + delta;
+
+        $container.animate({
+            scrollTop: newScroll
+        }, 300, function() {
+            // Mettre à jour l'état des boutons après le défilement
+            updateScrollButtons($container);
+        });
+    }
+
     // --- Données de l'album (ORIGINALES) ---
     const albumData = [
-      // COVER with image under title (path requested)
-      { type: 'cover', title: 'Six mois en Calédonie', subtitle: 'Il est temps de bientôt reprendre la route', media: { url: 'images/imagesNC_resultat.webp', caption: 'Souvenirs NC' } }, 
+      // 1. COUVERTURE - Titre mis à jour
+      { type: 'cover', title: 'NC : Le Bleu est une Promesse', subtitle: 'Six mois sous le soleil du Pacifique', media: { url: 'images/imageNC.png', caption: 'Souvenirs NC' } }, 
+      
+      // 2. PAGE D'INDEX (NOUVELLE PAGE)
+      { type: 'index', layout: 'index', title: 'Index du Voyage' },
 
+      // 3. Ancienne page 2
       { 
         type: 'content', 
         layout: 'text-only', 
@@ -195,6 +272,7 @@
           <p class="text-sm sm:text-base text-gray-500 italic">Ces six mois m'ont non seulement montré le monde, mais ils m'ont transformé. </p>
         `
       }, 
+      // 4. Ancienne page 3
       { 
         type: 'content', 
         layout: 'text-only', 
@@ -303,7 +381,6 @@
       { type: 'content', layout: 'portrait', media: [ { url: 'images/bourail.webp', caption: 'Bourail : la Roche Percée' } ] }, 
       { type: 'content', layout: 'portrait', media: [ { url: 'images/bourail1.webp', caption: 'Bourail' } ] }, 
       { type: 'content', layout: 'portrait', media: [ { url: 'images/bourail2.webp', caption: 'Plage des tortues' } ] },
-       { type: 'content', layout: 'portrait', media: [ { url: 'images/bourail8.webp', caption: 'Plage des tortues' } ] },
       { type: 'content', layout: 'portrait', media: [ { url: 'images/bourail3.webp', caption: 'Bourail' } ] },  
       { type: 'content', layout: 'portrait', media: [ { url: 'images/bourail4.webp', caption: 'Bourail' } ] },       
       { type: 'content', layout: 'portrait', media: [ { url: 'images/bourail5.webp', caption: 'Bourail' } ] },
@@ -334,6 +411,19 @@
       { type: 'cover', title: 'Bye la Province Sud', subtitle: 'To be continued...', media: null } 
     ];
     // --- FIN DES DONNÉES ORIGINALES ---
+
+    // NOUVEAU : Création de l'index des pages de titre
+    const indexPages = albumData.map((data, index) => {
+        if (data.type === 'content' && data.layout === 'text-only' && data.text) {
+            const match = data.text.match(/<p[^>]*>(.*?)<\/p>/i);
+            const title = match ? match[1].trim() : `Titre Page ${index + 1}`;
+            return {
+                pageNumber: index + 1,
+                title: title.replace(/<[^>]*>?/gm, '')
+            };
+        }
+        return null;
+    }).filter(item => item !== null);
 
     const $album = $('#monAlbum');
     const $prevBtn = $('#prevBtn');
@@ -453,11 +543,21 @@
     function createPageElement(data, index) {
       let contentHTML = '';
       const isCover = (index === 0 || index === albumData.length - 1);
+      const isIndexPage = (data.type === 'index');
       const pageNumber = index + 1;
       const pageNumberHtml = `<p class="page-footer text-xs text-gray-400 flex-none mt-1">${pageNumber}</p>`;
+      
+      // Bouton de retour à l'index (Page 2)
+      const backToIndexButton = (isCover || isIndexPage) ? '' : `
+          <a href="#" onclick="$album.turn('page', 2); return false;"
+             class="absolute top-3 left-3 text-gray-500 hover:text-green-700 transition duration-150 p-1 rounded-full bg-white/70 shadow-md z-10"
+             title="Retour à l'index">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
+          </a>
+      `;
 
       if (isCover) {
-        // CORRECTION ANTI-DÉBORDEMENT APPLIQUÉE ICI
+        // COUVERTURE : Correction anti-débordement
         contentHTML = `
           <div class="cover-page flex flex-col justify-around items-center w-full h-full p-6 text-white bg-green-800 rounded-lg relative overflow-hidden">
             
@@ -476,13 +576,60 @@
             <p class="absolute bottom-4 right-4 text-sm font-light opacity-70">${pageNumber}</p>
           </div>
         `;
+      } else if (isIndexPage) {
+        // PAGE D'INDEX AVEC CONTRÔLES DE DÉFILEMENT CLICABLES
+        const listItems = indexPages.map(item => {
+            return `
+                <li class="my-3 border-b border-gray-200 hover:border-green-500 transition duration-200">
+                    <a href="#" onclick="if($album.turn('page') !== ${item.pageNumber}) {$album.turn('page', ${item.pageNumber});} return false;"
+                       class="flex justify-between items-center text-lg text-gray-700 hover:text-green-700 font-medium">
+                        <span class="truncate">${item.title}</span>
+                        <span class="ml-4 text-green-500 font-bold flex-none">${item.pageNumber}</span>
+                    </a>
+                </li>
+            `;
+        }).join('');
+
+        contentHTML = `
+            <div class="content-page-wrapper p-8">
+                <h3 class="text-3xl font-extrabold text-gray-800 border-b-2 border-green-500 pb-2 mb-6 w-full text-center flex-none">
+                    ${data.title}
+                </h3>
+                
+                <button onclick="scrollIndexUp(this);" 
+                        class="scroll-btn scroll-up-btn w-full text-center text-green-500 hover:text-green-700 p-1 mb-2 transition duration-200 flex-none"
+                        title="Remonter l'index">
+                    <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                    </svg>
+                </button>
+                
+                <div id="indexListContainer" class="list-container w-full max-w-sm mx-auto overflow-y-auto flex-grow h-full px-2">
+                    <ul class="list-none w-full">
+                        ${listItems}
+                    </ul>
+                </div>
+                
+                <button onclick="scrollIndexDown(this);" 
+                        class="scroll-btn scroll-down-btn w-full text-center text-green-500 hover:text-green-700 p-1 mt-2 transition duration-200 flex-none"
+                        title="Descendre dans l'index">
+                    <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                
+                ${pageNumberHtml}
+            </div>
+        `;
       } else {
-        // CONTENT pages
+        // CONTENT pages (pages normales)
+        
         if (data.layout === 'portrait' || data.layout === 'landscape-only' || data.layout === 'video') {
             const media = Array.isArray(data.media) ? data.media[0] : null;
             const isLandscape = data.layout === 'landscape-only';
             contentHTML = `
-              <div class="content-page-wrapper">
+              <div class="content-page-wrapper relative"> 
+                  ${backToIndexButton} 
                   <div class="media-area">
                       ${renderMediaElement(media, isLandscape)}
                   </div>
@@ -492,7 +639,8 @@
             `;
         } else if (data.layout === 'text-only') {
             contentHTML = `
-                <div class="content-page-wrapper p-8 justify-center bg-gray-50/70 rounded-lg">
+                <div class="content-page-wrapper p-8 justify-center bg-gray-50/70 rounded-lg relative">
+                    ${backToIndexButton}
                     <div class="max-w-md mx-auto font-serif text-gray-800 leading-relaxed flex-grow flex flex-col justify-center">
                         ${data.text}
                     </div>
@@ -502,7 +650,8 @@
         } else {
             // fallback
             contentHTML = `
-                <div class="content-page-wrapper p-8 justify-center bg-gray-50/70 rounded-lg">
+                <div class="content-page-wrapper p-8 justify-center bg-gray-50/70 rounded-lg relative">
+                    ${backToIndexButton}
                     <div class="max-w-md mx-auto font-serif text-gray-800 leading-relaxed flex-grow flex flex-col justify-center">
                         <p class="text-sm text-gray-500">Contenu non défini pour cette page.</p>
                     </div>
@@ -572,6 +721,22 @@
                 storeCurrentPage(page);
                 updateNavigation(page);
             });
+            
+            // Événement pour initialiser l'état des boutons de défilement de l'index
+            $album.on('turned', function(event, page, view) {
+                if (page === 2 || view.includes(2)) {
+                    const $container = $('#page-2').find('#indexListContainer');
+                    
+                    // 1. Initialiser l'état des boutons au chargement de la page
+                    updateScrollButtons($container);
+                    
+                    // 2. Mettre à jour l'état chaque fois que l'utilisateur fait défiler manuellement
+                    $container.off('scroll').on('scroll', function() {
+                        updateScrollButtons($(this));
+                    });
+                }
+            });
+
 
             $prevBtn.on('click', function() {
                 $album.turn('previous');
