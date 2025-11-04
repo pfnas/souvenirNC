@@ -87,6 +87,7 @@
         cursor: pointer;
         outline: none;
         padding: 0;
+        transition: opacity 0.2s;
     }
     .scroll-btn:disabled {
         cursor: not-allowed;
@@ -254,7 +255,7 @@
         });
     }
 
-    // --- Données de l'album (ORIGINALES) ---
+    // --- Données de l'album (INTACTES) ---
     const albumData = [
       // 1. COUVERTURE - Titre mis à jour
       { type: 'cover', title: 'Six mois en Calédonie', subtitle: 'Il est temps de reprendre la route', media: { url: 'images/imagesNC_resultat.webp', caption: 'Souvenirs NC' } }, 
@@ -380,7 +381,6 @@
       }, 
       { type: 'content', layout: 'portrait', media: [ { url: 'images/bourail.webp', caption: 'Bourail : la Roche Percée' } ] }, 
       { type: 'content', layout: 'portrait', media: [ { url: 'images/bourail1.webp', caption: 'Bourail' } ] }, 
-      { type: 'content', layout: 'portrait', media: [ { url: 'images/bourail8.webp', caption: 'Bourail' } ] }, 
       { type: 'content', layout: 'portrait', media: [ { url: 'images/bourail2.webp', caption: 'Plage des tortues' } ] },
       { type: 'content', layout: 'portrait', media: [ { url: 'images/bourail3.webp', caption: 'Bourail' } ] },  
       { type: 'content', layout: 'portrait', media: [ { url: 'images/bourail4.webp', caption: 'Bourail' } ] },       
@@ -437,7 +437,8 @@
 
     // Seuil de largeur pour basculer en mode double page (Desktop)
     const SPREAD_WIDTH_THRESHOLD = 1024; 
-    
+    const totalPages = albumData.length;
+
     // --- Lightbox elements ---
     const $lightboxModal = $('#lightboxModal');
     const $lightboxContent = $('#lightboxContent');
@@ -548,12 +549,13 @@
       const pageNumber = index + 1;
       const pageNumberHtml = `<p class="page-footer text-xs text-gray-400 flex-none mt-1">${pageNumber}</p>`;
       
-      // Bouton de retour à l'index (Page 2)
+      // Bouton de retour à l'index (positionné en bas pour éviter le pli en responsive)
       const backToIndexButton = (isCover || isIndexPage) ? '' : `
           <a href="#" onclick="$album.turn('page', 2); return false;"
-             class="absolute top-3 left-3 text-gray-500 hover:text-green-700 transition duration-150 p-1 rounded-full bg-white/70 shadow-md z-10"
+             class="flex items-center text-sm font-semibold text-green-600 hover:text-green-800 transition duration-150 mt-2 p-1"
              title="Retour à l'index">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
+              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
+              Index
           </a>
       `;
 
@@ -578,14 +580,14 @@
           </div>
         `;
       } else if (isIndexPage) {
-        // PAGE D'INDEX AVEC CONTRÔLES DE DÉFILEMENT CLICABLES
+        // PAGE D'INDEX AVEC AJUSTEMENT DU TITRE
         const listItems = indexPages.map(item => {
             return `
                 <li class="my-3 border-b border-gray-200 hover:border-green-500 transition duration-200">
                     <a href="#" onclick="if($album.turn('page') !== ${item.pageNumber}) {$album.turn('page', ${item.pageNumber});} return false;"
-                       class="flex justify-between items-center text-lg text-gray-700 hover:text-green-700 font-medium">
+                       class="flex justify-between items-center text-lg text-gray-700 hover:text-green-700 font-medium"> 
                         <span class="truncate">${item.title}</span>
-                        <span class="ml-4 text-green-500 font-bold flex-none">${item.pageNumber}</span>
+                        <span class="ml-4 text-green-500 font-bold flex-none">${item.pageNumber}</span> 
                     </a>
                 </li>
             `;
@@ -593,7 +595,7 @@
 
         contentHTML = `
             <div class="content-page-wrapper p-8">
-                <h3 class="text-3xl font-extrabold text-gray-800 border-b-2 border-green-500 pb-2 mb-6 w-full text-center flex-none">
+                <h3 class="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-800 border-b-2 border-green-500 pb-2 mb-6 w-full text-center flex-none">
                     ${data.title}
                 </h3>
                 
@@ -605,7 +607,7 @@
                     </svg>
                 </button>
                 
-                <div id="indexListContainer" class="list-container w-full max-w-sm mx-auto overflow-y-auto flex-grow h-full px-2">
+                <div id="indexListContainer" class="list-container w-full max-w-sm mx-auto overflow-y-auto flex-grow h-full px-2 min-h-0">
                     <ul class="list-none w-full">
                         ${listItems}
                     </ul>
@@ -630,21 +632,26 @@
             const isLandscape = data.layout === 'landscape-only';
             contentHTML = `
               <div class="content-page-wrapper relative"> 
-                  ${backToIndexButton} 
                   <div class="media-area">
                       ${renderMediaElement(media, isLandscape)}
                   </div>
                   ${media && media.caption ? `<p class="text-sm text-gray-600 flex-none mt-2">${media.caption}</p>` : ''}
+                  
+                  ${backToIndexButton}
+                  
                   ${pageNumberHtml}
               </div>
             `;
         } else if (data.layout === 'text-only') {
+            // Le style des titres de pages text-only a été pris comme référence
             contentHTML = `
                 <div class="content-page-wrapper p-8 justify-center bg-gray-50/70 rounded-lg relative">
-                    ${backToIndexButton}
                     <div class="max-w-md mx-auto font-serif text-gray-800 leading-relaxed flex-grow flex flex-col justify-center">
                         ${data.text}
                     </div>
+                    
+                    ${backToIndexButton} 
+                    
                     ${pageNumberHtml}
                 </div>
             `;
@@ -652,10 +659,12 @@
             // fallback
             contentHTML = `
                 <div class="content-page-wrapper p-8 justify-center bg-gray-50/70 rounded-lg relative">
-                    ${backToIndexButton}
                     <div class="max-w-md mx-auto font-serif text-gray-800 leading-relaxed flex-grow flex flex-col justify-center">
                         <p class="text-sm text-gray-500">Contenu non défini pour cette page.</p>
                     </div>
+                    
+                    ${backToIndexButton}
+                    
                     ${pageNumberHtml}
                 </div>
             `;
@@ -669,12 +678,12 @@
       return pageElement[0].outerHTML;
     }
 
+
     // Resize + init turn.js
     function resizeAlbum() {
         const container = $('.flip-book-container')[0];
         const maxContainerWidth = container.clientWidth;
         const maxContainerHeight = window.innerHeight * 0.9; 
-        const totalPages = albumData.length;
         const shouldBeSinglePageMode = maxContainerWidth < SPREAD_WIDTH_THRESHOLD;
         let finalWidth, finalHeight;
 
